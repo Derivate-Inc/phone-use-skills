@@ -1,19 +1,22 @@
 # phone-use skills
 
-Agent skills for [phone-use](https://phoneuse.dev) — cloud iPhones your agent can drive.
+Agent skills for [phone-use](https://phoneuse.dev): cloud phones your agent can drive, iOS simulators
+and Android emulators.
 
 ## Install
 
 ```bash
-npx skills add Rajmeet/phone-use-skills
+npx skills add Derivate-Inc/phone-use-skills
 ```
 
-Teaches your agent (Claude Code, Cursor, any skills-compatible agent) the
-phone-use CLI: provisioning cloud phones, driving real iOS apps, running
-fleets in parallel, and verifying results honestly.
+This teaches Claude Code, Codex, Cursor or any skills-compatible agent the phone-use CLI: creating cloud
+phones, installing your build, driving apps by label, running several phones in parallel, and checking
+results honestly.
+
+Then install the CLI and sign in:
 
 ```bash
-npm i -g phone-use
+curl -fsSL https://phoneuse.dev/install | bash
 phone-use login
 ```
 

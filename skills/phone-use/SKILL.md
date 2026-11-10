@@ -1,17 +1,18 @@
 ---
 name: phone-use
-description: Drive cloud iPhones from the phone-use CLI — provision phones in seconds, control real iOS apps, run fleets in parallel, and verify results honestly.
+description: Drive cloud phones (iOS simulators and Android emulators) from the phone-use CLI — create phones in seconds, install your iOS build, drive apps by label, run fleets in parallel, and verify results honestly.
 ---
 
 # phone-use — give your agent a phone
 
-Cloud iPhones an agent can drive with a CLI. Phones provision in ~2s from a warm
-pool, run real iOS apps, and are disposable — create, drive, close.
+Cloud phones an agent can drive with a CLI: iOS simulators, ready in about 2s
+from a warm pool, and Android emulators. They run the built-in apps and your own
+app builds (not App Store apps), and they are disposable — create, drive, close.
 
 ## Setup
 
 ```bash
-npm i -g phone-use    # or: bun add -g phone-use
+curl -fsSL https://phoneuse.dev/install | bash    # or: npm i -g phone-use (needs Bun)
 phone-use login       # browser sign-in, saves your API key
 ```
 
@@ -21,20 +22,24 @@ Every shell command runs in a fresh shell, so a phone's connection env must be
 sourced into EACH command:
 
 ```bash
-id=$(phone-use create ios --ttl 15m | head -1 | awk '{print $1}')
+id=$(phone-use create ios --ttl 15m | head -1 | awk '{print $1}')   # or: create android
 phone-use env "$id" > /tmp/phone.env
 source /tmp/phone.env && phone-use observe
 source /tmp/phone.env && phone-use tap "Settings"
 ```
 
+The same verbs work on iOS and Android.
+
 ## Core verbs
 
 - `observe` — frontmost app + visible elements. Pipe through `head`, not `tail`:
-  the screen's identity is the `NavigationBar` line at the TOP.
+  the screen's identity (on iOS, the `NavigationBar` line) is at the TOP.
 - `screenshot` — the rich channel; use when observe's tree isn't enough.
 - `tap "<label>"` — target elements by LABEL text (partial match works). NEVER
   reuse `@e` refs across commands; refs expire every invocation.
-- `type`, `scroll`, `drag`, `nav to=back|home`, `open <app>`, `wait_for "<text>"`
+- `type`, `scroll`, `drag`, `nav back|home`, `open <app>`, `wait_for "<text>"`
+- `install <path/to/App.app|.zip>` — put your own iOS simulator build on the
+  attached phone, then `open <bundle id>`.
 - `search <app> <query>` — in-app search. The FIRST arg is the app:
   `phone-use search Wikipedia "Kyoto"`, never `phone-use search "Kyoto"`.
 - `batch` — several verbs in one invocation; prefer it for known sequences, it
