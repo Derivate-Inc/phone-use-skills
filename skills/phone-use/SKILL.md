@@ -15,6 +15,9 @@ One CLI, the same verbs on every phone:
 Start on this machine. Do not run `phone-use create` unless the user asks for a
 cloud phone.
 
+These commands are for phone-use 0.8.1 or newer (`phone-use --version`; re-run
+the installer to update).
+
 ## Setup
 
 ```bash
@@ -87,20 +90,28 @@ and retry.
 - `tap "<label>"` — target elements by LABEL text (partial match works). NEVER
   reuse `@e` refs across commands; refs expire every invocation.
 - `type`, `scroll`, `drag`, `nav back|home`, `open <app>`, `wait_for "<text>"`
+- `press return|tab|backspace|space|escape --yes` — one keyboard key, for what
+  `type` cannot express (submit a search, move to the next field). A cloud
+  phone takes `return` only.
+- `wait_for --stable` — wait until the screen stops changing (an animation, a
+  spinner, a page load) instead of sleeping.
+- `scroll down --until "<text>"` — keep scrolling until the text is on screen;
+  it fails, and says so, if the list ends first. `scroll down --collect` walks
+  a list to its end and returns every row once.
 - `search <app> <query>` — in-app search. The FIRST arg is the app:
   `phone-use search Wikipedia "Kyoto"`, never `phone-use search "Kyoto"`.
 - `goto <app> <screen>` — walk to a named screen with no model steps:
   `phone-use goto Settings Accessibility`. The app comes first.
 - `ask "<name>"` — read a value without knowing its screen:
   `phone-use ask "iOS Version"`.
-- `toggle <app> "<switch>" --on --yes` — flip a switch by name. If it says the
-  switch is not on this screen, name the screen:
-  `phone-use toggle Settings "Reduce Motion" --destination Motion --on --yes`.
+- `toggle <app> "<switch>" --on --yes` — flip a switch by name:
+  `phone-use toggle Settings "Reduce Motion" --on --yes`. If you know the
+  screen, `--destination Motion` gets there faster.
 - `batch '<JSON array>'` — several actions in one invocation; prefer it for
   known sequences, it is much faster than one CLI call per step:
   `phone-use batch '[{"do":"tap","label":"General"},{"do":"tap","label":"About"}]'`.
-  Actions are `tap`, `fill`, `toggle`, `scroll` and `verify`. Read its output:
-  a malformed action prints an error but still exits 0.
+  Actions are `tap`, `fill`, `toggle`, `scroll` and `verify`;
+  `phone-use batch --help` shows each shape.
 - `handle_alert get|accept|dismiss` — report or clear a system permission
   dialog.
 - `task "<goal>"` — built-in agent runs a whole goal end to end (needs
@@ -149,8 +160,9 @@ Most phone failures are silent: the command returns and nothing happened.
 2. Do one thing, then check that one thing: `phone-use wait_for "<text>"` or
    `phone-use observe --expect "<text>"`. Do not sleep and hope.
 3. Read the action's own report. `(no change)` after a tap means the tap did
-   nothing. Suspect a system alert first: run `phone-use handle_alert get`, then
-   `accept` or `dismiss`, and tap again.
+   nothing. If the report names a system alert, clear it with
+   `phone-use handle_alert accept` or `dismiss` and tap again; otherwise check
+   with `phone-use handle_alert get`.
 4. Once a sequence works, put it in `batch`. When a batch fails, re-run the one
    step that failed and look at the screen. Do not re-run the whole batch.
 5. Tell the user what you are doing as you go: one line before a step, one line
