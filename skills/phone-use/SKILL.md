@@ -15,6 +15,9 @@ One CLI, the same verbs on every phone:
 Start on this machine. Do not run `phone-use create` unless the user asks for a
 cloud phone.
 
+These commands are for phone-use 0.8.1 or newer (`phone-use --version`; re-run
+the installer to update).
+
 ## Setup
 
 ```bash
@@ -42,8 +45,15 @@ phone-use connect && phone-use observe
   `phone-use disconnect`. For one command only, set `PHONE_USE_DEVICE=android`
   or `PHONE_USE_DEVICE=mirror` instead.
 - On a real phone you are acting on the user's own apps and accounts. Ask before
-  anything that sends, buys, deletes or changes a setting. If `observe` shows
-  "Unlock iPhone", ask the user to unlock it; do not guess.
+  anything that sends, buys, deletes or changes a setting. Never type a
+  passcode, a password or a 2FA code; ask the user to enter it.
+- "My phone" means the user's own phone. If it cannot be reached, say so and
+  ask. Do not switch to a simulator or a cloud phone instead: it is a different
+  phone, with different apps and logins.
+- If `observe` shows "Unlock iPhone" or "iPhone in Use", only the user can clear
+  it. Pass the message on, wait for them, and retry once. Do not poll in a loop.
+- On the real iPhone's Home Screen, launch apps with `phone-use open "<app>"`.
+  A tap on the label under an icon can miss.
 
 ## Cloud phones are on a waitlist
 
@@ -80,10 +90,30 @@ and retry.
 - `tap "<label>"` — target elements by LABEL text (partial match works). NEVER
   reuse `@e` refs across commands; refs expire every invocation.
 - `type`, `scroll`, `drag`, `nav back|home`, `open <app>`, `wait_for "<text>"`
+- `press return|tab|backspace|space|escape --yes` — one keyboard key, for what
+  `type` cannot express (submit a search, move to the next field). A cloud
+  phone takes `return` only.
+- `wait_for --stable` — wait until the screen stops changing (an animation, a
+  spinner, a page load) instead of sleeping.
+- `scroll down --until "<text>"` — keep scrolling until the text is on screen;
+  it fails, and says so, if the list ends first. `scroll down --collect` walks
+  a list to its end and returns every row once.
 - `search <app> <query>` — in-app search. The FIRST arg is the app:
   `phone-use search Wikipedia "Kyoto"`, never `phone-use search "Kyoto"`.
-- `batch` — several verbs in one invocation; prefer it for known sequences, it
-  is much faster than one CLI call per step.
+- `goto <app> <screen>` — walk to a named screen with no model steps:
+  `phone-use goto Settings Accessibility`. The app comes first.
+- `ask "<name>"` — read a value without knowing its screen:
+  `phone-use ask "iOS Version"`.
+- `toggle <app> "<switch>" --on --yes` — flip a switch by name:
+  `phone-use toggle Settings "Reduce Motion" --on --yes`. If you know the
+  screen, `--destination Motion` gets there faster.
+- `batch '<JSON array>'` — several actions in one invocation; prefer it for
+  known sequences, it is much faster than one CLI call per step:
+  `phone-use batch '[{"do":"tap","label":"General"},{"do":"tap","label":"About"}]'`.
+  Actions are `tap`, `fill`, `toggle`, `scroll` and `verify`;
+  `phone-use batch --help` shows each shape.
+- `handle_alert get|accept|dismiss` — report or clear a system permission
+  dialog.
 - `task "<goal>"` — built-in agent runs a whole goal end to end (needs
   `ANTHROPIC_API_KEY`).
 
@@ -121,6 +151,25 @@ the CLI expects exactly one. Shut down the simulators you booted when done.
 On an approved cloud account the same shape works with one `create` per lane
 (write each `phone-use env "$id"` to its own file and source it in that lane),
 then `close` every id at the end.
+
+## Working method
+
+Most phone failures are silent: the command returns and nothing happened.
+
+1. Before you act, name what should change: a title, a row, a field's contents.
+2. Do one thing, then check that one thing: `phone-use wait_for "<text>"` or
+   `phone-use observe --expect "<text>"`. Do not sleep and hope.
+3. Read the action's own report. `(no change)` after a tap means the tap did
+   nothing. If the report names a system alert, clear it with
+   `phone-use handle_alert accept` or `dismiss` and tap again; otherwise check
+   with `phone-use handle_alert get`.
+4. Once a sequence works, put it in `batch`. When a batch fails, re-run the one
+   step that failed and look at the screen. Do not re-run the whole batch.
+5. Tell the user what you are doing as you go: one line before a step, one line
+   on what you saw.
+6. If the task can be done on a website or through an API, do it there. Use the
+   phone for what needs a phone: an app, a build under test, how something looks
+   on a phone.
 
 ## Verify honestly
 
